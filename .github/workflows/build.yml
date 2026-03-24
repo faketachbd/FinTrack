@@ -6,6 +6,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -30,18 +33,13 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: npm run build -- --base=./
 
-      - name: Verify dist folder
-        run: |
-          ls -la dist/
-          echo "Build successful ✅"
-
       - name: Setup Capacitor
         run: |
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
           cat <<EOF > capacitor.config.json
           {
-            "appId": "com.ec.aoo",
+            "appId": "com.fintrack.app",
             "appName": "FinTrack",
             "webDir": "dist",
             "server": {
@@ -52,7 +50,7 @@ jobs:
           }
           EOF
 
-          npx cap add android 2>/dev/null || echo "Android folder already exists"
+          npx cap add android 2>/dev/null || echo "Already exists"
           npx cap sync android
 
       - name: Fix Kotlin Version
@@ -70,7 +68,7 @@ jobs:
           }
           EOF
 
-      - name: Build Android APK
+      - name: Build APK
         run: |
           cd android
           chmod +x gradlew
