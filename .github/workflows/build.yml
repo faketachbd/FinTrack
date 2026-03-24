@@ -5,7 +5,6 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
-
     env:
       ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
@@ -33,40 +32,22 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: npm run build -- --base=./
 
-      - name: Setup Capacitor
-        run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+      - name: Install Capacitor
+        run: npm install @capacitor/core @capacitor/cli @capacitor/android
 
-          cat <<EOF > capacitor.config.json
-          {
-            "appId": "com.fintrack.app",
-            "appName": "FinTrack",
-            "webDir": "dist",
-            "server": {
-              "androidScheme": "https",
-              "hostname": "localhost",
-              "cleartext": true
-            }
-          }
-          EOF
+      - name: Write Capacitor Config
+        run: >
+          echo '{"appId":"com.fintrack.app","appName":"FinTrack","webDir":"dist","server":{"androidScheme":"https","hostname":"localhost","cleartext":true}}' > capacitor.config.json
 
-          npx cap add android 2>/dev/null || echo "Already exists"
-          npx cap sync android
+      - name: Add Android Platform
+        run: npx cap add android 2>/dev/null || echo "Already exists"
+
+      - name: Sync Capacitor
+        run: npx cap sync android
 
       - name: Fix Kotlin Version
         run: |
-          cat <<'EOF' >> android/build.gradle
-
-          subprojects {
-              configurations.all {
-                  resolutionStrategy.eachDependency { DependencyResolveDetails details ->
-                      if (details.requested.group == 'org.jetbrains.kotlin') {
-                          details.useVersion '1.9.0'
-                      }
-                  }
-              }
-          }
-          EOF
+          printf '\nsubprojects {\n    configurations.all {\n        resolutionStrategy.eachDependency { DependencyResolveDetails details ->\n            if (details.requested.group == "org.jetbrains.kotlin") {\n                details.useVersion "1.9.0"\n            }\n        }\n    }\n}\n' >> android/build.gradle
 
       - name: Build APK
         run: |
